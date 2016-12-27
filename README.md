@@ -17,9 +17,9 @@ Instructions for each button:
   This will add an image as the background to the canvas. Points are drawn on top of this image. Like the links for points, paste an image link inside the textarea then click the button.  
 **Interact:**  
   Clicking this button allows you to click on existing points on the canvas and open the associated links.    
-**Save**
-  Clicking the save button will produce a string of data that you can copy and paste into a plain-text file. Be carefull not to change the format. Future versions will probably make saving a bit more robust.
-**Load**
+**Save**  
+  Clicking the save button will produce a string of data that you can copy and paste into a plain-text file. Be carefull not to change the format. Future versions will probably make saving a bit more robust.  
+**Load**  
   This makes a new textarea that you can paste data from a previous save function.
 
 **Misc:**  
