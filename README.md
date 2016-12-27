@@ -21,3 +21,5 @@ Instructions for each button:
 **Misc:**  
   Clicking on the bottom half of the control box will close any output that's been displayed.  
   There's no link validation, so you need to make sure to use valid links.  
+
+https://alamannis.github.io/interactiveMap/interactiveMap.html
