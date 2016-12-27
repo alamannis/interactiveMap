@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Canvas Testing</title>
+<style type="text/css">
+body {
+	background: #A9A9A9; /* For browsers that do not support gradients */
+	background: -webkit-linear-gradient(left top, #808080, #A9A9A9); /* For Safari 5.1 to 6.0 */
+	background: -o-linear-gradient(bottom right, #808080, #A9A9A9); /* For Opera 11.1 to 12.0 */
+	background: -moz-linear-gradient(bottom right, #808080, #A9A9A9); /* For Firefox 3.6 to 15 */
+	background: linear-gradient(to bottom right, #808080, #A9A9A9); /* Standard syntax */
+}
+canvas {
+	background: #FFF;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translateX(-50%) translateY(-50%);
+}
+#container {
+	width: 80%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	border: 2px solid #000;
+}
+#pointData {
+	background: #A9A9A9;
+}
+#saveString {
+	background: #A9A9A9;
+	overflow: auto;
+}
+#control {
+	width: 19%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: 2px solid #000;
+	padding: 5px
+	padding-top: 1em;
+}
+#controlBot {
+	position: relative;
+	left: 0;
+	top: 0;
+	height:100%;
+}
+#editLink {
+	cursor: pointer;
+}
+a {
+	color: blue;
+}
+img {
+	display: none;
+}
+.hide {
+	display: none;
+}
+.ctrlBtn {
+	width: 50%;
+}
+.ctrlIn {
+	width: 98%;
+	height: 5em;
+	overflow: auto;
+}
+</style>
+<script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+</head>
+<body>
+	<div id="container">
+		<canvas id="myCanvas">Canvas not supported</canvas>
+	</div>
+	<div id="control">
+		<div id="CP">
+			<img id="myImg" src="" />
+			<button type="button" id="clear" class="ctrlBtn">Clear</button><button type="button" id="vedit" class="ctrlBtn">View / Edit</button>
+			<button type="button" id="linkBtn" class="ctrlBtn">Add Link</button><button type="button" id="addMap" class="ctrlBtn">Add map image</button>
+			<button type="button" id="addLinks" class="ctrlBtn">Add Links</button><button type="button" id="interact" class="ctrlBtn">Interact</button>
+			<textarea id="linkText" class="ctrlIn" placeholder="Enter links for map points or map image. One per line."></textarea>
+			<button type="button" id="save" class="ctrlBtn">Save</button><button type="button" id="load" class="ctrlBtn">Load</button>
+			
+			<span id="mp"></span>
+		</div>
+		<div id="controlBot">
+		</div>
+	</div>
+</body>
+<footer>
+<script type="text/javascript">
+	var mousePos = {x: 0, y: 0};
+	var clicks = {};
+	var points = {};
+	var lastObjectAccessed = {};
+	//var currentLink = "";
+	var img = new Image();
+	
+	var clickFlag = false;
+	var interactFlag = false;
+	function timeStamp() {
+		var d = new Date();
+		return d.getTime().toString();
+	}
+	function getMousePos(evt) {
+		var rect = c.getBoundingClientRect();
+			mousePos.x = evt.clientX - rect.left;
+			mousePos.y = evt.clientY - rect.top;
+	}
+	
+	function drawCircle(context, xPos, yPos, rad, fill) {
+		context.beginPath();
+		context.arc(xPos, yPos, rad, 0, 2 * Math.PI);
+		if (fill) {
+			context.fillStyle = "#000";
+			context.fill();
+			return context;
+		} else {
+			context.stroke();
+			return context;
+		}
+	}
+	function addClick (xPos, yPos, rad) {
+		var t = timeStamp();
+		clicks[t] = { 
+					x: xPos,
+					y: yPos,
+					r: rad,
+					link: getFirstLink()
+					};
+	}
+	
+	function drawBackground(canvas, imgObj) {
+		var c = canvas.getContext('2d');
+		var imgAR = imgObj.width / imgObj.height;
+		var canAR = canvas.width / canvas.height;
+		var renderWidth, renderHeight, _x, _y;
+		
+		if (imgAR < canAR) {
+			renderHeight = canvas.height;
+			renderWidth = imgObj.width * (renderHeight / imgObj.height);
+			_x = (canvas.width - renderWidth) / 2;
+			_y = 0;
+		} else if (imgAR > canAR) {
+			renderWidth = canvas.width;
+			renderHeight = imgObj.height * (renderWidth / imgObj.width);
+			_x = 0;
+			_y = (canvas.height - renderHeight) / 2;
+		} else {
+			renderHeight = canvas.height;
+			renderWidth = canvas.width;
+			_x = 0;
+			_y = 0;
+		}
+		c.drawImage(imgObj, _x, _y, renderWidth, renderHeight);
+		img = imgObj;
+	}
+	
+	function save(imageS) {
+		//var nI = new Image();
+		//nI.src = img.src;
+		var saveObj = {
+						saveImg: imageS.src,
+						saveData: clicks
+					};
+		var saveString = JSON.stringify(saveObj);
+		return saveString;
+		console.log('saveImg:');
+		console.log(saveObj.imageS);
+	}
+	
+	function load() {
+		var loadIn = document.getElementById('loadString').value.split('\n')[0];
+		var loadObj = JSON.parse(loadIn);
+		img.src = loadObj.saveImg;
+		clicks = loadObj.saveData;
+		requestAnimationFrame(update);
+		//console.log(loadObj);
+	}
+	
+	function drawClicks() {
+		var k = Object.keys(clicks);
+		var obj;
+		for (i in k) {
+			obj = clicks[k[i]];
+			drawCircle(ctx, obj.x, obj.y, obj.r, false);
+			//console.log(obj);
+		}
+	}
+	
+	function clearCanvas() {
+		ctx.clearRect(0, 0, c.width, c.height);
+	}
+	
+	function clickCanvas(evt) {
+		getMousePos(evt);
+		addClick(mousePos.x, mousePos.y, 3);
+	}
+	
+	function singleClickCanvas(evt) {
+		clickCanvas(evt);
+		c.removeEventListener('click', singleClickCanvas, false);
+		clickFlag = false;
+	}
+	
+	function isSavedPoint(xPos, yPos) {
+		var k = Object.keys(clicks);
+		var obj;
+		var xComp, yComp = 0;
+		for (i in k) {
+			obj = clicks[k[i]];
+			xComp = Math.pow(xPos - obj.x, 2);
+			yComp = Math.pow(yPos - obj.y, 2);
+			if (Math.pow(xComp + yComp, 1/2) <= obj.r * 1.75) {
+				var _obj = {sonicSD: k[i], data: obj};
+				return [true, _obj];
+			}
+		}
+		return [false, obj];
+	}
+	
+	function interactCanvas(evt) {
+		getMousePos(evt);
+		var val = isSavedPoint(mousePos.x, mousePos.y, true);
+		var isPoint = val[0];
+		if (isPoint) {
+			var m = "<p>This is a point you added!</p><br />" + "<p>center of point: (" + mousePos.x + "," + mousePos.y + ")</p>";
+			$('#mp').html(m);
+			console.log($('#mp').html());
+			getPointData(val[1]);
+		}
+	}
+	function ctrlClick() {
+		var evt = new MouseEvent('click', {ctrlKey: true});
+	}
+	function followPoint(evt) {
+		getMousePos(evt);
+		var val = isSavedPoint(mousePos.x, mousePos.y, true);
+		var isPoint = val[0];
+		if (isPoint) {
+			getPointData(val[1]);
+			var linkVal = lastObjectAccessed.data.link;
+			$('#container').append('<a href="' + linkVal + '" id="linkNewTab" class="hidden" target="_blank" />');
+			
+			//window.open(linkVal).blur();
+			var nEvt = new MouseEvent('click', {ctrlKey: true});
+			var nL = document.getElementById("linkNewTab");
+			nL.dispatchEvent(nEvt);
+			//nL.click();
+			$('#linkNewTab').remove();
+		}
+	}
+	
+	function newLinkAdd() {
+			$('#pointData').append('<div id="editBox"/>');
+			$('#editBox').append('<textarea id="newLink" class="ctrlIn" placeholder="Enter new link. Only one will be accepted."></textarea>');
+			$('#editBox').append('<button id="addNewLink" type="button" class="ctrlBtn">Add new link</button>');
+			$('#addNewLink').click(function(evt) {
+				var newLink = document.getElementById('newLink').value.split('\n')[0];
+				lastObjectAccessed.data.link = newLink;
+				clicks[lastObjectAccessed.sonicSD] = lastObjectAccessed.data;
+				msg = '<p>Point coordinates: (' + lastObjectAccessed.data.x + ', ' + lastObjectAccessed.data.y + ')</p>';
+				msg += '<p><span id="editLinkBox"><a id="editLink" title="Click to Edit">Link data</a>: ' + lastObjectAccessed.data.link + '</p>';
+				$('#pointData').html(msg);
+				$('#editLink').click(newLinkAdd);
+			});
+			$('#editBox').append('<button id="finishEdit" class="ctrlBtn" type="button">Finish Editing</button>');
+			$('#finishEdit').click(function(evt) {
+				$('#editBox').remove();
+			});
+	}
+	
+	function getPointData(obj) {
+		lastObjectAccessed = obj;
+		var msg = '';
+		msg += '<div id="pointData">';
+		msg += '<p>Point coordinates: (' + obj.data.x + ', ' + obj.data.y + ')</p>';
+		msg += '<p><span id="editLinkBox"><a id="editLink" title="Click to Edit">Link data</a>: ' + obj.data.link + '</p>';
+		msg += '</div>';
+		$('#mp').html(msg);
+		console.log($('#mp').html());
+		$('#editLink').click(newLinkAdd);
+		clicks[lastObjectAccessed.sonicSD] = lastObjectAccessed.data;
+	}
+	
+	function addMapImage() {
+		var l = getFirstLink();
+		img.src = l;
+		drawBackground(c, img);
+	}
+	
+	function getFirstLink() {
+		var textBox = document.getElementById('linkText');
+		var inText = textBox.value.split('\n');
+		var outText = inText.reverse().pop();
+		textBox.value = inText.reverse().join('\n');
+		return outText;
+	}
+	
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+	
+	c.width = $('#container').innerWidth() * 0.95;
+	c.height = $('#container').innerHeight() * 0.95;
+	
+	$('#addMap').click(addMapImage);
+	
+	$('#addLinks').click(function(evt) {
+		c.removeEventListener('click', interactCanvas, false);
+		c.addEventListener('click', clickCanvas,false);
+		c.addEventListener('mousemove', getMousePos, false);
+		clickFlag = true;
+	});
+	
+	$('#vedit').click(function(evt) {
+		c.addEventListener('click', interactCanvas, false);
+	});
+	
+	$('#interact').click(function(evt) {
+		c.addEventListener('click', followPoint, false);
+	});
+	
+	$('#clear').click(function(evt) {
+		c.removeEventListener('click', interactCanvas, false);
+		var f = confirm("Are you sure you want to clear the canvas?\nPress cancel to keep work.");
+		if (f) {
+			clearCanvas();
+			$('#mp').html('');
+			clicks = {};
+			img = new Image();
+		}
+	});
+	
+	$('#controlBot').click(function(evt) {
+		$('#mp').html('');
+	});
+	
+	$('#save').click(function(evt) {
+		var s = save(img);
+		console.log(typeof s);
+		$('#mp').html('<div id="saveString">' + s + '</p>');
+	});
+	
+	$('#load').click(function(evt) {
+		$('#mp').append('<textarea id="loadString" class="ctrlIn" placeholder="Paste Save Data"></textarea><button type="button" id="useData" class="ctrlBtn">Use Data</button">');
+		$('#useData').click(load);
+		
+	});
+	
+	$('#linkBtn').click(function(evt) {
+		clickFlag = true;
+		c.addEventListener('mousemove', getMousePos, false);
+		c.addEventListener('click', singleClickCanvas, false);
+	});
+	
+	c.addEventListener('mouseout', function(evt) {
+		clickFlag = false;
+		requestAnimationFrame(update);
+	}, false);
+	
+	
+	
+	function update() {
+	clearCanvas();
+	drawBackground(c, img);
+	if (clickFlag) {
+		drawCircle(ctx, mousePos.x, mousePos.y, 3, false);
+	}
+	drawClicks();
+	requestAnimationFrame(update);
+	}
+	requestAnimationFrame(update);
+	
+</script>
+</html>
